@@ -1,81 +1,96 @@
-import type { RequestEvent } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
-import { db } from '$lib/server/db';
-import * as table from '$lib/server/db/schema';
+// src/lib/server/auth.ts
 
-const DAY_IN_MS = 1000 * 60 * 60 * 24;
+import { SvelteKitAuth } from '@auth/sveltekit';
+import Google from '@auth/sveltekit/providers/google';
+import Microsoft from '@auth/sveltekit/providers/microsoft-entra-id';
+import { db } from '$lib/db';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
 
-export const sessionCookieName = 'auth-session';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
+const AUTH_SECRET = process.env.AUTH_SECRET as string;
+const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID as string;
+const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET as string;
 
-export function generateSessionToken() {
-	const bytes = crypto.getRandomValues(new Uint8Array(18));
-	const token = encodeBase64url(bytes);
-	return token;
-}
-
-export async function createSession(token: string, userId: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const session: table.Session = {
-		id: sessionId,
-		userId,
-		expiresAt: new Date(Date.now() + DAY_IN_MS * 30)
-	};
-	await db.insert(table.session).values(session);
-	return session;
-}
-
-export async function validateSessionToken(token: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const [result] = await db
-		.select({
-			// Adjust user table here to tweak returned data
-			user: { id: table.user.id, username: table.user.username },
-			session: table.session
-		})
-		.from(table.session)
-		.innerJoin(table.user, eq(table.session.userId, table.user.id))
-		.where(eq(table.session.id, sessionId));
-
-	if (!result) {
-		return { session: null, user: null };
+export const { handle, signIn, signOut } = SvelteKitAuth({
+	adapter: DrizzleAdapter(db),
+	providers: [
+		Google({
+			clientId: GOOGLE_CLIENT_ID,
+			clientSecret: GOOGLE_CLIENT_SECRET,
+			authorization: {
+				params: {
+					scope: 'openid email'
+				}
+			}
+		}),
+		...(MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET ? [
+			Microsoft({
+				clientId: MICROSOFT_CLIENT_ID,
+				clientSecret: MICROSOFT_CLIENT_SECRET
+			})
+		] : [])
+	],
+	secret: AUTH_SECRET,
+	trustHost: true,
+	session: {
+		strategy: 'jwt',
+		maxAge: 30 * 24 * 60 * 60, // 30 days (in seconds)
+		updateAge: 24 * 60 * 60,   // Update session every 24 hours
+	},
+  callbacks: {
+	async signIn(params) {
+	  try {
+		console.log('[Auth.js signIn callback]', params);
+		return true;
+	  } catch (error) {
+		console.error('[Auth.js signIn callback error]', error, params);
+		throw error;
+	  }
+	},
+	session: async ({ session, token }) => {
+	  try {
+		console.log('[Auth.js session callback]', { session, token });
+		if (session?.user && token?.sub) {
+		  session.user.id = token.sub;
+		}
+		return session;
+	  } catch (error) {
+		console.error('[Auth.js session callback error]', error, { session, token });
+		throw error;
+	  }
+	},
+	jwt: async ({ user, token }) => {
+	  try {
+		console.log('[Auth.js jwt callback]', { user, token });
+		if (user) {
+		  token.uid = user.id;
+		}
+		return token;
+	  } catch (error) {
+		console.error('[Auth.js jwt callback error]', error, { user, token });
+		throw error;
+	  }
 	}
-	const { session, user } = result;
-
-	const sessionExpired = Date.now() >= session.expiresAt.getTime();
-	if (sessionExpired) {
-		await db.delete(table.session).where(eq(table.session.id, session.id));
-		return { session: null, user: null };
+  },
+  events: {
+	async signIn(message) {
+	  console.log('[Auth.js event signIn]', message);
+	},
+	async signOut(message) {
+	  console.log('[Auth.js event signOut]', message);
+	},
+	async createUser(message) {
+	  console.log('[Auth.js event createUser]', message);
+	},
+	async linkAccount(message) {
+	  console.log('[Auth.js event linkAccount]', message);
+	},
+	async session(message) {
+	  console.log('[Auth.js event session]', message);
 	}
-
-	const renewSession = Date.now() >= session.expiresAt.getTime() - DAY_IN_MS * 15;
-	if (renewSession) {
-		session.expiresAt = new Date(Date.now() + DAY_IN_MS * 30);
-		await db
-			.update(table.session)
-			.set({ expiresAt: session.expiresAt })
-			.where(eq(table.session.id, session.id));
+  },
+	pages: {
+		signIn: '/login'
 	}
-
-	return { session, user };
-}
-
-export type SessionValidationResult = Awaited<ReturnType<typeof validateSessionToken>>;
-
-export async function invalidateSession(sessionId: string) {
-	await db.delete(table.session).where(eq(table.session.id, sessionId));
-}
-
-export function setSessionTokenCookie(event: RequestEvent, token: string, expiresAt: Date) {
-	event.cookies.set(sessionCookieName, token, {
-		expires: expiresAt,
-		path: '/'
-	});
-}
-
-export function deleteSessionTokenCookie(event: RequestEvent) {
-	event.cookies.delete(sessionCookieName, {
-		path: '/'
-	});
-}
+});
