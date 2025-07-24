@@ -10,10 +10,16 @@
     "sourceMap": true,
     "strict": true,
     "moduleResolution": "bundler",
-    "module": "ESNext", // or "CommonJS" for compatibility
-    "outDir": "./dist", // Output directory for compiled JS
-    "rootDir": "./src"  // Where TS files are located
+    "module": "ESNext",
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/routes/boards/+page.svelte",
+    "src/routes/env-test/+page.svelte",
+    "src/routes/feed/+page.svelte",
+    "src/routes/profile/+page.svelte"
+  ]
 }

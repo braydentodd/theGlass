@@ -13,7 +13,7 @@ const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID as string;
 const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET as string;
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
-	adapter: DrizzleAdapter(db),
+	// adapter: DrizzleAdapter(db), // Temporarily disabled due to DB connection issues
 	providers: [
 		Google({
 			clientId: GOOGLE_CLIENT_ID,
@@ -27,14 +27,15 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		...(MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET ? [
 			Microsoft({
 				clientId: MICROSOFT_CLIENT_ID,
-				clientSecret: MICROSOFT_CLIENT_SECRET
+				clientSecret: MICROSOFT_CLIENT_SECRET,
+				allowDangerousEmailAccountLinking: true
 			})
 		] : [])
 	],
 	secret: AUTH_SECRET,
 	trustHost: true,
 	session: {
-		strategy: 'jwt',
+		strategy: 'jwt', // Use JWT sessions temporarily
 		maxAge: 30 * 24 * 60 * 60, // 30 days (in seconds)
 		updateAge: 24 * 60 * 60,   // Update session every 24 hours
 	},
@@ -48,27 +49,15 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		throw error;
 	  }
 	},
-	session: async ({ session, token }) => {
+	session: async ({ session, user }) => {
 	  try {
-		console.log('[Auth.js session callback]', { session, token });
-		if (session?.user && token?.sub) {
-		  session.user.id = token.sub;
+		console.log('[Auth.js session callback]', { session, user });
+		if (session?.user && user?.id) {
+		  session.user.id = user.id;
 		}
 		return session;
 	  } catch (error) {
-		console.error('[Auth.js session callback error]', error, { session, token });
-		throw error;
-	  }
-	},
-	jwt: async ({ user, token }) => {
-	  try {
-		console.log('[Auth.js jwt callback]', { user, token });
-		if (user) {
-		  token.uid = user.id;
-		}
-		return token;
-	  } catch (error) {
-		console.error('[Auth.js jwt callback error]', error, { user, token });
+		console.error('[Auth.js session callback error]', error, { session, user });
 		throw error;
 	  }
 	}

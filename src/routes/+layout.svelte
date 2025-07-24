@@ -14,7 +14,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-   {#if $page.url.pathname !== '/login'}
+   {#if $page.url.pathname !== '/login' && $page.url.pathname !== '/'}
 	   <Navigation user={data?.session?.user} />
    {/if}
    <main>

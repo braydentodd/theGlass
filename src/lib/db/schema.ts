@@ -1,16 +1,17 @@
 import { pgTable, varchar, timestamp, text, integer } from 'drizzle-orm/pg-core';
+import { randomUUID } from 'crypto';
 
 export const user = pgTable('user', {
-  id: varchar('id', { length: 255 }).primaryKey(),
+  id: varchar('id', { length: 255 }).primaryKey().$defaultFn(() => randomUUID()),
   name: varchar('name', { length: 255 }),
   email: varchar('email', { length: 255 }).notNull(),
-  emailVerified: timestamp('email_verified', { mode: 'date' }),
+  emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
-  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
 });
 
 export const account = pgTable('account', {
-  id: varchar('id', { length: 255 }).primaryKey(),
+  id: varchar('id', { length: 255 }).primaryKey().$defaultFn(() => randomUUID()),
   userId: varchar('userId', { length: 255 }).notNull().references(() => user.id),
   type: varchar('type', { length: 255 }).notNull(),
   provider: varchar('provider', { length: 255 }).notNull(),
@@ -32,7 +33,7 @@ export const account = pgTable('account', {
 });
 
 export const session = pgTable('session', {
-  sessionToken: varchar('session_token', { length: 255 }).primaryKey(),
-  userId: varchar('user_id', { length: 255 }).notNull().references(() => user.id),
+  sessionToken: varchar('sessionToken', { length: 255 }).primaryKey(),
+  userId: varchar('userId', { length: 255 }).notNull().references(() => user.id),
   expires: timestamp('expires', { mode: 'date' }).notNull(),
 });
