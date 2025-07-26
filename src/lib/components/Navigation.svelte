@@ -32,11 +32,10 @@
 				<!-- Logo -->
 				<a href="/" class="flex items-center space-x-2">
 					<img 
-						src="/logo.png" 
+						src="/wordmark.png" 
 						alt="The Glass" 
-						class="h-8 w-8"
+						class="h-12 w-25"
 					/>
-					<span class="text-xl font-bold text-gray-900 ">The Glass</span>
 				</a>
 
 				<!-- Main Navigation -->
