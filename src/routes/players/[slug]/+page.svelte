@@ -72,21 +72,160 @@
     <title>{player?.name || 'Player'} - Player Profile | The Glass</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
-    <!-- Back Navigation -->
-    <div class="bg-white border-b border-gray-200 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-            <a href="/players" class="inline-flex items-center text-red-500 hover:text-red-600 transition-colors">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-                Back to All Players
-            </a>
-        </div>
+
+<style>
+    .ambient-particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 2;
+        overflow: hidden;
+    }
+    .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: radial-gradient(circle, rgba(255, 49, 49, 0.6) 0%, rgba(255, 49, 49, 0.4) 50%, transparent 100%);
+        border-radius: 50%;
+        animation: float 8s infinite ease-in-out;
+    }
+    .particle:nth-child(1) { left: 15%; top: 20%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(2) { left: 80%; top: 30%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(3) { left: 25%; top: 70%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(4) { left: 70%; top: 80%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(5) { left: 45%; top: 15%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(6) { left: 85%; top: 60%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(7) { left: 35%; top: 45%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(8) { left: 65%; top: 25%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(9) { left: 10%; top: 55%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(10) { left: 90%; top: 40%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(11) { left: 55%; top: 85%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(12) { left: 20%; top: 35%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(13) { left: 75%; top: 65%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(14) { left: 40%; top: 75%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(15) { left: 60%; top: 10%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(16) { left: 30%; top: 90%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(17) { left: 95%; top: 75%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(18) { left: 50%; top: 50%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(19) { left: 5%; top: 25%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(20) { left: 82%; top: 95%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(21) { left: 12%; top: 85%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(22) { left: 72%; top: 15%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(23) { left: 38%; top: 62%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(24) { left: 88%; top: 52%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(25) { left: 22%; top: 18%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(26) { left: 68%; top: 88%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(27) { left: 42%; top: 32%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(28) { left: 78%; top: 68%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(29) { left: 18%; top: 48%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(30) { left: 92%; top: 28%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(31) { left: 7%; top: 12%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(32) { left: 58%; top: 78%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(33) { left: 33%; top: 8%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(34) { left: 87%; top: 33%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(35) { left: 13%; top: 67%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(36) { left: 77%; top: 43%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(37) { left: 47%; top: 23%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(38) { left: 93%; top: 58%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(39) { left: 27%; top: 93%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(40) { left: 63%; top: 37%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(41) { left: 17%; top: 73%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(42) { left: 83%; top: 17%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(43) { left: 37%; top: 87%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(44) { left: 73%; top: 7%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(45) { left: 3%; top: 47%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(46) { left: 97%; top: 83%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(47) { left: 53%; top: 27%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(48) { left: 23%; top: 63%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(49) { left: 67%; top: 97%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(50) { left: 43%; top: 53%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(51) { left: 8%; top: 35%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(52) { left: 92%; top: 65%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(53) { left: 28%; top: 22%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(54) { left: 74%; top: 84%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(55) { left: 16%; top: 76%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(56) { left: 86%; top: 14%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(57) { left: 51%; top: 41%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(58) { left: 34%; top: 67%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(59) { left: 79%; top: 19%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(60) { left: 11%; top: 89%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(61) { left: 64%; top: 56%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(62) { left: 39%; top: 31%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(63) { left: 84%; top: 72%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(64) { left: 21%; top: 44%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(65) { left: 76%; top: 81%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(66) { left: 46%; top: 16%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(67) { left: 91%; top: 38%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(68) { left: 14%; top: 61%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(69) { left: 69%; top: 24%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(70) { left: 31%; top: 79%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(71) { left: 87%; top: 46%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(72) { left: 24%; top: 13%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(73) { left: 59%; top: 69%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(74) { left: 41%; top: 86%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(75) { left: 94%; top: 21%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(76) { left: 17%; top: 54%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(77) { left: 72%; top: 91%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(78) { left: 56%; top: 28%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(79) { left: 9%; top: 71%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(80) { left: 81%; top: 34%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(81) { left: 36%; top: 58%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(82) { left: 89%; top: 77%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(83) { left: 26%; top: 39%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(84) { left: 71%; top: 11%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(85) { left: 54%; top: 64%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(86) { left: 19%; top: 82%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(87) { left: 96%; top: 49%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(88) { left: 44%; top: 26%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(89) { left: 77%; top: 73%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(90) { left: 32%; top: 95%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(91) { left: 84%; top: 17%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(92) { left: 47%; top: 51%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(93) { left: 12%; top: 74%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(94) { left: 67%; top: 33%; animation-delay: 0s; animation-duration: 15s; }
+    .particle:nth-child(95) { left: 29%; top: 87%; animation-delay: 0s; animation-duration: 11s; }
+    .particle:nth-child(96) { left: 82%; top: 52%; animation-delay: 0s; animation-duration: 16s; }
+    .particle:nth-child(97) { left: 49%; top: 18%; animation-delay: 0s; animation-duration: 12s; }
+    .particle:nth-child(98) { left: 15%; top: 66%; animation-delay: 0s; animation-duration: 14s; }
+    .particle:nth-child(99) { left: 74%; top: 92%; animation-delay: 0s; animation-duration: 13s; }
+    .particle:nth-child(100) { left: 37%; top: 29%; animation-delay: 0s; animation-duration: 15s; }
+    @keyframes float {
+        0% {
+            transform: translateY(0px) translateX(0px) scale(0.9);
+            opacity: 0.3;
+        }
+        25% {
+            transform: translateY(-15px) translateX(8px) scale(1.1);
+            opacity: 0.7;
+        }
+        50% {
+            transform: translateY(-8px) translateX(-12px) scale(0.8);
+            opacity: 0.4;
+        }
+        75% {
+            transform: translateY(-20px) translateX(4px) scale(1.0);
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(0px) translateX(0px) scale(0.9);
+            opacity: 0.3;
+        }
+    }
+</style>
+
+<div class="min-h-screen bg-black">
+    <!-- Floating particles (100 total - optimized for performance) -->
+    <div class="ambient-particles">
+        {#each Array(100) as _, i}
+            <div class="particle"></div>
+        {/each}
     </div>
 
     {#if player}
-        <div class="relative bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden" style="height: {visualizationHeight}px; min-height: {visualizationHeight}px; max-height: {visualizationHeight}px;">
+        <div class="relative bg-black text-white overflow-hidden" style="height: {visualizationHeight}px; min-height: {visualizationHeight}px; max-height: {visualizationHeight}px;">
             <div class="relative z-10 max-w-7xl mx-auto px-4 h-full flex flex-row items-end">
                 <!-- Height markers and player sketch -->
                 <div class="relative flex flex-row items-end h-full" style="height: {visualizationHeight}px;">
@@ -108,8 +247,8 @@
                             </div>
                         {/each}
                         {#if playerHeightPosition !== null}
-                            <div class="absolute left-0 w-60 h-0.5 bg-red-400" style="top: {playerHeightPosition}px;"></div>
-                            <span class="absolute left-full ml-42 text-xs text-red-400 font-bold" style="top: {playerHeightPosition}px; transform: translateY(-50%);">{player.height}</span>
+                            <div class="absolute left-0 w-70 h-0.5 bg-[#ff3131]" style="top: {playerHeightPosition}px;"></div>
+                            <span class="absolute left-full ml-52 text-s text-[#ff3131] font-bold" style="top: {playerHeightPosition}px; transform: translateY(-50%);">{player.height}</span>
                         {/if}
                     </div>
                     <!-- Player sketch, feet at bottom, head at height -->
@@ -122,50 +261,14 @@
                 </div>
                 <!-- Player name and team info -->
                 <div class="flex-1 flex flex-col justify-end h-full pb-8 pl-12">
-                    <h1 class="text-7xl font-extrabold mb-2 text-red-500">{player.name}</h1>
-                    <div class="text-3xl text-gray-300 mb-4">#{player.jerseyNumber} • {player.team.name}</div>
+                    <h1 class="text-7xl font-extrabold mb-2 text-[#ff3131]">{player.name}</h1>
+                    <div class="text-3xl text-white mb-4 italic"> {player.team.name}</div>
                 </div>
             </div>
         </div>
 
         <!-- Posts section -->
         <div class="relative bg-white">
-            <div class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black to-transparent opacity-20"></div>
-
-            <div class="max-w-4xl mx-auto px-4 py-16">
-                <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Community Posts</h2>
-
-                <div class="space-y-8">
-                    {#each player.recentPosts || [] as post}
-                        <article class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">{post.title}</h3>
-                            <p class="text-gray-600 mb-4">{post.excerpt}</p>
-                            <div class="flex items-center justify-between text-sm text-gray-500">
-                                <span>{post.date}</span>
-                                <div class="flex items-center space-x-4">
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
-                                        </svg>
-                                        {post.likes}
-                                    </span>
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                        </svg>
-                                        {post.comments}
-                                    </span>
-                                </div>
-                            </div>
-                        </article>
-                    {:else}
-                        <div class="text-center py-12 text-gray-500">
-                            <p class="text-lg">No posts yet about {player.name}</p>
-                            <p class="text-sm mt-2">Be the first to share your thoughts!</p>
-                        </div>
-                    {/each}
-                </div>
-            </div>
         </div>
     {:else}
         <div class="text-center py-12 text-gray-500">

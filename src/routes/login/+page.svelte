@@ -120,19 +120,6 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
-	.fade-in {
-		opacity: 0;
-		transform: translateY(10px);
-		animation: fadeInSharp 0.6s ease-out forwards;
-	}
-
-	@keyframes fadeInSharp {
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
 	/* Ambient particle effects */
 	.ambient-particles {
 		position: absolute;
@@ -149,7 +136,7 @@
 		position: absolute;
 		width: 2px;
 		height: 2px;
-		background: radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(255, 87, 51, 0.4) 50%, transparent 100%);
+		background: radial-gradient(circle, rgba(255, 49, 49, 0.6) 0%, rgba(255, 49, 49, 0.4) 50%, transparent 100%);
 		border-radius: 50%;
 		animation: float 8s infinite ease-in-out;
 	}
@@ -399,7 +386,7 @@
 			
 			<!-- Logo with painted/printed wall effect -->
 			<div class="text-center mb-16">
-				<div class="mx-auto w-[40rem] logo-wall-paint {mounted ? 'fade-in' : ''}" style="animation-delay: 0.1s;">
+				<div class="mx-auto w-[40rem] logo-wall-paint">
 					<img 
 						src="/white_wordmark.png" 
 						alt="The Glass" 
@@ -409,7 +396,7 @@
 			</div>
 
 			<!-- Clean outline buttons -->
-			<div class="space-y-4 {mounted ? 'fade-in' : ''}" style="animation-delay: 0.3s;">
+			<div class="space-y-4" style="animation-delay: 0.3s;">
 				<div class="max-w-sm mx-auto">
 					<!-- Google Sign In -->
 					<button
