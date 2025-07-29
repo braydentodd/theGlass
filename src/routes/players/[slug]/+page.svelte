@@ -8,7 +8,8 @@
     $: currentYear = new Date().getFullYear();
 
     // Safely handle undefined player
-    $: birthDate = player ? new Date(player.birthDate || '1996-08-31') : new Date('1996-08-31');
+    // No birthDate property on player, use a default or remove age calculation
+    $: birthDate = new Date('1996-08-31');
     $: today = new Date();
     $: ageInMs = today.getTime() - birthDate.getTime();
     $: exactAge = player ? ageInMs / (365.25 * 24 * 60 * 60 * 1000) : 0;
@@ -29,29 +30,33 @@
     // Calculate the available height for the visualization area
     const visualizationHeight = 600; // Fixed height for consistency
 
-    // Create more detailed height markers
+    // Create height markers for every inch, only label feet (except 0' and 8'), 6" markers longer, and add a precise player height line
     $: heightMarkers = (() => {
         const markers = [];
-        // Create markers every 3 inches from 0 to 96 inches (8 feet)
-        for (let i = 0; i <= 96; i += 3) {
+        for (let i = 0; i <= 96; i++) {
             const heightFeet = Math.floor(i / 12);
-            const remainingInches = i % 12;
-            const isFootMark = i % 12 === 0;
-            const isSixInchMark = i % 6 === 0;
-            // Calculate position from bottom (0' is at bottom)
+            // Only mark feet if not 0' or 8'
+            const isFootMark = i % 12 === 0 && i !== 0 && i !== 96;
+            const isSixInchMark = i % 12 === 6;
+            let label = '';
+            if (isFootMark) {
+                label = `${heightFeet}'`;
+            }
             const positionFromBottom = (i / 96) * visualizationHeight;
             markers.push({
                 heightInches: i,
                 positionFromTop: visualizationHeight - positionFromBottom,
-                label: isFootMark ? `${heightFeet}'` : (isSixInchMark ? `${heightFeet}'${remainingInches}"` : ''),
-                isPlayerHeight: player ? Math.abs(i - totalHeightInches) < 1.5 : false,
+                label,
                 isMajorMark: isFootMark,
-                isMinorMark: isSixInchMark && !isFootMark,
-                isTickMark: !isSixInchMark
+                isSixInchMark,
+                isTickMark: !isFootMark && !isSixInchMark
             });
         }
         return markers;
     })();
+
+    // Calculate the exact position for the player's height line
+    $: playerHeightPosition = player ? visualizationHeight - ((totalHeightInches / 96) * visualizationHeight) : null;
 
     // Color function for percentiles
     function getPercentileColor(percentile: number) {
@@ -81,166 +86,45 @@
     </div>
 
     {#if player}
-        <!-- Full Screen Player Header -->
-        <div class="relative min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
-            <div class="relative z-10 max-w-7xl mx-auto px-4 py-12">
-                <div class="grid grid-cols-12 gap-8" style="min-height: {visualizationHeight}px;">
-                    <!-- Left side - Player Sketch with measurements -->
-                    <div class="col-span-5 relative" style="height: {visualizationHeight}px;">
-                        <!-- Height markers container -->
-                        <div class="absolute left-0 top-0 w-20 h-full">
-                            {#each heightMarkers as marker}
-                                <div 
-                                    class="absolute flex items-center" 
-                                    style="top: {marker.positionFromTop}px; transform: translateY(-50%);"
-                                >
-                                    <div class="
-                                        {marker.isMajorMark ? 'bg-gray-300 w-8 h-0.5' : 
-                                         marker.isMinorMark ? 'bg-gray-400 w-6 h-0.5' : 
-                                         'bg-gray-500 w-4 h-px'}
-                                    "></div>
-                                    {#if marker.label}
-                                        <span class="ml-2 text-xs text-gray-300 font-mono">{marker.label}</span>
-                                    {/if}
-                                    {#if marker.isPlayerHeight}
-                                        <div class="absolute left-0 w-full h-0.5 bg-red-400 animate-pulse"></div>
-                                        <span class="ml-12 text-xs text-red-400 font-bold">{player.height}</span>
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-
-                        <!-- Player visualization container - aligned with height scale -->
-                        <div class="absolute bottom-0 left-20 flex items-end" style="height: {visualizationHeight}px;">
-                            <PlayerSketch 
-                                {player} 
-                                showInfo={false} 
-                                showCard={false} 
-                                containerHeight={visualizationHeight}
-                            />
-                        </div>
+        <div class="relative bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden" style="height: {visualizationHeight}px; min-height: {visualizationHeight}px; max-height: {visualizationHeight}px;">
+            <div class="relative z-10 max-w-7xl mx-auto px-4 h-full flex flex-row items-end">
+                <!-- Height markers and player sketch -->
+                <div class="relative flex flex-row items-end h-full" style="height: {visualizationHeight}px;">
+                    <!-- Height markers container -->
+                    <div class="relative w-20 h-full">
+                        {#each heightMarkers as marker}
+                            <div 
+                                class="absolute flex items-center" 
+                                style="top: {marker.positionFromTop}px; transform: translateY(-50%);"
+                            >
+                                <div class="
+                                    {marker.isMajorMark ? 'bg-gray-300 w-8 h-0.5' : 
+                                     marker.isSixInchMark ? 'bg-gray-500 w-4 h-0.5' : 
+                                     'bg-gray-600 w-3 h-px'}
+                                "></div>
+                                {#if marker.label}
+                                    <span class="ml-2 text-xs text-gray-300 font-mono">{marker.label}</span>
+                                {/if}
+                            </div>
+                        {/each}
+                        {#if playerHeightPosition !== null}
+                            <div class="absolute left-0 w-60 h-0.5 bg-red-400" style="top: {playerHeightPosition}px;"></div>
+                            <span class="absolute left-full ml-42 text-xs text-red-400 font-bold" style="top: {playerHeightPosition}px; transform: translateY(-50%);">{player.height}</span>
+                        {/if}
                     </div>
-
-                    <!-- Right side - Player info and stats -->
-                    <div class="col-span-7 flex flex-col justify-between">
-                        <!-- Player name and basic info -->
-                        <div class="mb-8">
-                            <h1 class="text-6xl font-bold mb-2 text-red-500">{player.name}</h1>
-                            <div class="text-2xl text-gray-300 mb-4">#{player.jerseyNumber} • {player.team.name}</div>
-
-                            <div class="flex gap-8 text-sm">
-                                <div>
-                                    <span class="text-gray-400">Age:</span>
-                                    <span class="ml-1 font-semibold">{exactAge.toFixed(1)}</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-400">Experience:</span>
-                                    <span class="ml-1 font-semibold">{player.experience} years</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-400">Position:</span>
-                                    <span class="ml-1 font-semibold">{player.position}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Physical measurements -->
-                        <div class="mb-8">
-                            <h3 class="text-xl font-bold mb-4 text-red-400">Physical Profile</h3>
-                            <div class="grid grid-cols-3 gap-6">
-                                <div>
-                                    <div class="text-sm text-gray-400">Height</div>
-                                    <div class="text-2xl font-bold">{player.height}</div>
-                                    <div class="text-xs text-gray-500">{totalHeightInches} inches</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-400">Weight</div>
-                                    <div class="text-2xl font-bold">{player.weight}</div>
-                                    <div class="text-xs text-gray-500">lbs</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-400">Wingspan</div>
-                                    <div class="text-2xl font-bold">{player.wingspan}</div>
-                                    <div class="text-xs text-gray-500">{totalWingspanInches} inches</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stats section -->
-                        <div class="mb-8">
-                            <div class="flex items-center mb-4">
-                                <div class="bg-gray-800 rounded-md p-0.5 flex">
-                                    <button 
-                                        class="px-2 py-1 text-xs rounded transition-colors {statsMode === 'totals' ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'}"
-                                        on:click={() => statsMode = 'totals'}
-                                    >
-                                        Totals
-                                    </button>
-                                    <button 
-                                        class="px-2 py-1 text-xs rounded transition-colors {statsMode === 'per_game' ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'}"
-                                        on:click={() => statsMode = 'per_game'}
-                                    >
-                                        Per Game
-                                    </button>
-                                    <button 
-                                        class="px-2 py-1 text-xs rounded transition-colors {statsMode === 'per_36' ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'}"
-                                        on:click={() => statsMode = 'per_36'}
-                                    >
-                                        Per 36
-                                    </button>
-                                    <button 
-                                        class="px-2 py-1 text-xs rounded transition-colors {statsMode === 'per_100' ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'}"
-                                        on:click={() => statsMode = 'per_100'}
-                                    >
-                                        Per 100
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-6 gap-3">
-                                {#each player.detailedStats[statsMode] as stat}
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-400 mb-1">{stat.label}</div>
-                                        <div class="text-base font-bold mb-1">{stat.value}</div>
-                                        <div class="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                                            <div 
-                                                class="h-full transition-all duration-300 rounded-full"
-                                                style="width: {stat.percentile}%; background-color: {getPercentileColor(stat.percentile)}"
-                                            ></div>
-                                        </div>
-                                        <div class="text-xs text-gray-500 mt-0.5">{stat.percentile}th</div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-
-                        <!-- Salary section -->
-                        <div>
-                            <h3 class="text-xl font-bold mb-4 text-red-400">Contract Details</h3>
-                            <div class="grid grid-cols-4 gap-3">
-                                {#each player.salaryBreakdown as salary}
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-400 mb-1">{salary.year}</div>
-                                        <div class="text-sm font-bold mb-1">${salary.amount}</div>
-                                        <div class="text-xs text-gray-500 mb-2">{salary.capPercent}% cap</div>
-                                        <div class="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                                            <div 
-                                                class="h-full transition-all duration-300 rounded-full"
-                                                style="width: {salary.percentile}%; background-color: {getPercentileColor(salary.percentile)}"
-                                            ></div>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
+                    <!-- Player sketch, feet at bottom, head at height -->
+                    <div class="flex items-end h-full" style="height: {visualizationHeight}px;">
+                        <PlayerSketch 
+                            {player} 
+                            containerHeight={visualizationHeight}
+                        />
                     </div>
                 </div>
-            </div>
-
-            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-                <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                </svg>
+                <!-- Player name and team info -->
+                <div class="flex-1 flex flex-col justify-end h-full pb-8 pl-12">
+                    <h1 class="text-7xl font-extrabold mb-2 text-red-500">{player.name}</h1>
+                    <div class="text-3xl text-gray-300 mb-4">#{player.jerseyNumber} • {player.team.name}</div>
+                </div>
             </div>
         </div>
 
