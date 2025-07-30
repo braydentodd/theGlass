@@ -8,7 +8,6 @@ export interface PageData {
 		weight: number;
 		wingspan: string;
 		skinColor: 'light' | 'medium-light' | 'medium' | 'medium-dark' | 'dark';
-		hairStyle: 'short' | 'fade' | 'bald' | 'long' | 'afro';
 		hairColor: string;
 		jerseyNumber: number;
 		age: number;

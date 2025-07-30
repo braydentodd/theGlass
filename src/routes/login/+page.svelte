@@ -21,75 +21,6 @@
 		position: relative;
 	}
 
-	.dark-arena::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: 
-			radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.03) 0%, transparent 50%),
-			radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.02) 0%, transparent 50%);
-	}
-
-	/* Logo painted on wall effect */
-	.logo-wall-paint {
-		position: relative;
-		filter: 
-			drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3))
-			drop-shadow(0 0 20px rgba(239, 68, 68, 0.1));
-		transition: all 0.4s ease;
-	}
-	
-	.logo-wall-paint::before {
-		content: '';
-		position: absolute;
-		top: -8px;
-		left: -8px;
-		right: -8px;
-		bottom: -8px;
-		background: 
-			radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.05) 0%, transparent 40%),
-			radial-gradient(circle at 80% 70%, rgba(0, 0, 0, 0.03) 0%, transparent 30%),
-			radial-gradient(circle at 40% 80%, rgba(0, 0, 0, 0.04) 0%, transparent 35%),
-			linear-gradient(45deg, 
-				transparent 30%, 
-				rgba(0, 0, 0, 0.02) 31%, 
-				rgba(0, 0, 0, 0.02) 33%, 
-				transparent 34%),
-			linear-gradient(-45deg, 
-				transparent 60%, 
-				rgba(0, 0, 0, 0.015) 61%, 
-				rgba(0, 0, 0, 0.015) 63%, 
-				transparent 64%);
-		z-index: -1;
-		border-radius: 8px;
-		opacity: 0.6;
-	}
-	
-	.logo-wall-paint::after {
-		content: '';
-		position: absolute;
-		top: 10%;
-		left: 15%;
-		width: 25%;
-		height: 20%;
-		background: 
-			radial-gradient(ellipse at center, rgba(0, 0, 0, 0.08) 0%, transparent 70%);
-		z-index: -1;
-		border-radius: 50%;
-		transform: rotate(-15deg);
-		opacity: 0.4;
-	}
-	
-	.logo-wall-paint:hover {
-		transform: scale(1.02);
-		filter: 
-			drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4))
-			drop-shadow(0 0 30px rgba(239, 68, 68, 0.15));
-	}
-
 	/* Clean outline buttons */
 	.outline-button {
 		background: transparent;
@@ -381,11 +312,11 @@
 		<div class="particle"></div>
 	</div>
 	
-	<div class="relative z-10 min-h-screen flex items-center justify-center p-8">
+	<div class="relative z-10 min-h-screen flex items-center justify-center p-2">
 		<div class="w-full max-w-2xl">
 			
 			<!-- Logo with painted/printed wall effect -->
-			<div class="text-center mb-16">
+			<div class="text-center mb-10">
 				<div class="mx-auto w-[40rem] logo-wall-paint">
 					<img 
 						src="/white_wordmark.png" 
@@ -396,7 +327,7 @@
 			</div>
 
 			<!-- Clean outline buttons -->
-			<div class="space-y-4" style="animation-delay: 0.3s;">
+			<div class="space-y-4">
 				<div class="max-w-sm mx-auto">
 					<!-- Google Sign In -->
 					<button

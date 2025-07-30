@@ -74,6 +74,18 @@
 
 
 <style>
+    
+    .digital-display {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 4px;
+        padding: 0px 4px;
+        font-family: monospace;
+        color: #ff3131;
+        letter-spacing: 1px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+
     .ambient-particles {
         position: absolute;
         top: 0;
@@ -246,19 +258,38 @@
                                 {/if}
                             </div>
                         {/each}
-                        {#if playerHeightPosition !== null}
-                            <div class="absolute left-0 w-70 h-0.5 bg-[#ff3131]" style="top: {playerHeightPosition}px;"></div>
-                            <span class="absolute left-full ml-52 text-s text-[#ff3131] font-bold" style="top: {playerHeightPosition}px; transform: translateY(-50%);">{player.height}</span>
-                        {/if}
                     </div>
-                    <!-- Player sketch, feet at bottom, head at height -->
-                    <div class="flex items-end h-full" style="height: {visualizationHeight}px;">
+                    
+                    <!-- Player sketch container with weight scale at bottom -->
+                    <div class="relative flex items-end h-full" style="height: {visualizationHeight}px;">
+                        <!-- Weight scale platform at the bottom -->
+                        <div class="absolute bottom-0 left-9 z-20">
+                            <!-- Main scale platform -->
+                            <div class="bg-gray-400 h-2 w-32 rounded-sm shadow-lg"></div>
+                            <!-- Center display section -->
+                            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full">
+                                <div class="bg-gray-400 w-19 h-7 rounded-t flex items-center justify-center">
+                                    <div class="digital-display w-17 h-5 flex items-center justify-center">
+                                        <span class="text-xs font-bold">{`${player.weight} lbs` || '---'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Player sketch -->
                         <PlayerSketch 
                             {player} 
                             containerHeight={visualizationHeight}
                         />
                     </div>
+                    
+                    <!-- Height indicator line - moved here to appear on top -->
+                    {#if playerHeightPosition !== null}
+                        <div class="absolute left-0 w-70 h-1 bg-[#ff3131] z-30" style="top: {playerHeightPosition - visualizationHeight/384}px;"></div>
+                        <span class="absolute left-72 text-s text-[#ff3131] font-bold z-30" style="top: {playerHeightPosition - visualizationHeight/384}px; transform: translateY(-50%);">{player.height}</span>
+                    {/if}
                 </div>
+                
                 <!-- Player name and team info -->
                 <div class="flex-1 flex flex-col justify-end h-full pb-8 pl-12">
                     <h1 class="text-7xl font-extrabold mb-2 text-[#ff3131]">{player.name}</h1>
