@@ -34,8 +34,11 @@
     $: wingspanInches = player && wingspanParts[1] ? parseInt(wingspanParts[1].replace('"', '')) || 0 : 0;
     $: totalWingspanInches = player ? wingspanFeet * 12 + wingspanInches : totalHeightInches;
 
-    $: bmi = player ? (player.weight / (totalHeightInches * totalHeightInches)) * 703 : 24;
-    $: buildScale = Math.max(0.85, Math.min(1.4, bmi / 24));
+    $: weightHeightRatio = player ? player.weight / totalHeightInches : 2.8; //
+    $: wingspanRatio = totalWingspanInches / totalHeightInches; // Typical range: 1.0-1.1
+    $: wingspanAdjustment = Math.max(0.92, Math.min(1.08, 2.05 - wingspanRatio)); // Longer wingspan = leaner
+    $: athleteBuildIndex = (weightHeightRatio * wingspanAdjustment) / 2.8; // Normalized to ~1.0 for average NBA player
+    $: buildScale = Math.max(0.85, Math.min(1.4, athleteBuildIndex));
     $: wingspanDiff = totalWingspanInches - totalHeightInches;
 
     // Scale height relative to container - EXACTLY to playerPixelHeight
@@ -45,16 +48,8 @@
     // Improved proportions for basketball players
     $: headSize = playerPixelHeight * 0.11; // Smaller head for athletic proportions
     $: neckHeight = headSize * 0.25; // Proper neck proportion
-    $: shoulderWidth = headSize * 2.2 * buildScale; // Wider shoulders for athletes
-    $: torsoHeight = playerPixelHeight * 0.48; // Longer torso
-    $: legHeight = playerPixelHeight * 0.41; // Keep leg proportion
-    
-    // Improved limb proportions
-    $: armWidth = headSize * 0.22 * buildScale; // Slightly thinner arms
-    $: legWidth = headSize * 0.32 * buildScale; // Slightly thicker legs
-    $: baseArmLength = torsoHeight * 0.8; // Longer base arm length
-    $: armLength = baseArmLength + (wingspanDiff * 1.8); // Better wingspan scaling
-    $: armOffsetFromTorso = headSize * 0.12;
+    $: torsoHeight = playerPixelHeight * 0.45; // Longer torso
+    $: legHeight = playerPixelHeight * 0.44; // Keep leg proportion
 
     $: shortsColor = player?.team?.primaryColor || '#000000';
     $: skinColor = player ? skinColors[player.skinColor] : '#F5DEB3';
@@ -68,25 +63,41 @@
     $: jerseyNumberColor = isColorWhite(player?.team?.primaryColor ?? '') ? '#222' : '#fff';
 
     // CRITICAL: Ensure all vertical measurements add up to exactly playerPixelHeight
+    // Note: neck scaling is applied after this calculation to maintain total height accuracy
     $: totalVerticalCheck = headSize * 0.9 + neckHeight + torsoHeight + legHeight;
     $: scalingFactor = playerPixelHeight / totalVerticalCheck;
     
     // Apply scaling to ensure pixel-perfect height
     $: scaledHeadSize = headSize * scalingFactor;
-    $: scaledNeckHeight = neckHeight * scalingFactor;
+    $: scaledNeckHeight = neckHeight * scalingFactor * (0.9 + (buildScale - 1) * 0.3 + (weightAdj - 1) * 0.2); // Neck scales with build and weight
     $: scaledTorsoHeight = torsoHeight * scalingFactor;
     $: scaledLegHeight = legHeight * scalingFactor;
 
+    // Dynamic SVG dimensions based on player build
+    $: baseSvgWidth = 175; // Base width for average player
+    $: svgWidthAdjustment = buildScale * 0.3 + (wingspanDiff / 12) * 0.15; // Wider for bigger/longer players
+    $: dynamicSvgWidth = Math.max(150, Math.min(200, baseSvgWidth + (svgWidthAdjustment * 40))); // Clamp between 240-350px
+    $: centerX = dynamicSvgWidth / 2; // Dynamic center based on actual SVG width
+    
+    // Weight adjustment for limb thickness (heavier players = slightly thicker limbs)
+    $: weightAdj = player ? Math.min(1.15, Math.max(0.85, 1 + (player.weight - 220) / 220 * 0.12)) : 1; // NBA avg ~220lbs
+    
     // Recalculate other measurements based on scaled head
     $: scaledShoulderWidth = scaledHeadSize * 2.2 * buildScale;
-    $: scaledArmWidth = scaledHeadSize * 0.22 * buildScale;
-    $: scaledLegWidth = scaledHeadSize * 0.32 * buildScale;
-    $: scaledArmLength = (scaledTorsoHeight * 0.8) + (wingspanDiff * 1.8);
+    $: scaledArmWidth = Math.max(8, scaledHeadSize * 0.22 * buildScale * weightAdj); // Clamp minimum width
+    $: scaledLegWidth = Math.max(12, scaledHeadSize * 0.32 * buildScale * weightAdj); // Clamp minimum width
+    
+    // More realistic arm length: wingspan - shoulder width, divided by 2
+    // This properly accounts for narrow vs wide shoulders affecting arm length
+    $: shoulderWidthInches = (scaledShoulderWidth / playerPixelHeight) * totalHeightInches; // Convert shoulder width back to inches
+    $: armLengthInches = Math.max(22, (totalWingspanInches - shoulderWidthInches) / 2); // Each arm, minimum 24" for realism
+    $: scaledArmLength = (armLengthInches / totalHeightInches) * playerPixelHeight; // Convert back to pixels
+    
     $: scaledArmOffsetFromTorso = scaledHeadSize * 0.12;
 
     // Hand size scales with wingspan: base hand size plus a factor of wingspanDiff
     $: handSizeBase = scaledHeadSize * 0.11 * Math.sqrt(buildScale);
-    $: handSize = handSizeBase * (1 + Math.max(0, wingspanDiff) / 12 * 0.18); // up to ~18% larger for +12in wingspan
+    $: handSize = handSizeBase * (1 + Math.max(0, wingspanDiff) / 12 * 0.22); // up to ~18% larger for +12in wingspan
 
     // Base positions (from bottom up)
     $: feetY = playerPixelHeight;
@@ -108,9 +119,7 @@
 
     // Apply vertical offset to all Y positions
     $: hipY_shifted = hipY + verticalOffset;
-    $: waistY_shifted = waistY + verticalOffset;
     $: shoulderY_shifted = shoulderY + verticalOffset;
-    $: neckY_shifted = neckY + verticalOffset;
     $: headY_shifted = headY + verticalOffset;
     $: shortsStartY_shifted = shortsStartY + verticalOffset;
     $: jerseyEndY_shifted = jerseyEndY + verticalOffset;
@@ -118,54 +127,53 @@
     // Debug: Check if measurements add up correctly
     $: if (player) {
         const totalHeight = scaledHeadSize * 0.9 + scaledNeckHeight + scaledTorsoHeight + scaledLegHeight;
-        console.log(`Target height: ${playerPixelHeight}px, Actual height: ${totalHeight}px, Difference: ${Math.abs(playerPixelHeight - totalHeight)}px`);
     }
 </script>
 
 <div class="player-container">
     <div class="model-wrapper" class:no-card={!showCard} style="padding:0; background:transparent; box-shadow:none; border:none; display:block;">
-        <svg viewBox="0 0 300 {svgHeight}" class="player-model" style="display:block; height:{svgHeight}px; width:300px; position:relative; bottom:0; margin:0;">
+        <svg viewBox="0 0 {dynamicSvgWidth} {svgHeight}" class="player-model" style="display:block; height:{svgHeight}px; width:{dynamicSvgWidth}px; position:relative; bottom:0; margin:0;">
             {#if player}
                 <!-- LEGS -->
-                <rect x="{100 - scaledShoulderWidth * 0.22 - 2}" y={hipY_shifted} width={scaledLegWidth} height={scaledLegHeight} fill={skinColor} rx="8"/>
-                <rect x="{100 + scaledShoulderWidth * 0.22 - scaledLegWidth + 2}" y={hipY_shifted} width={scaledLegWidth} height={scaledLegHeight} fill={skinColor} rx="8"/>
+                <rect x="{centerX - scaledShoulderWidth * 0.22 - 2}" y={hipY_shifted} width={scaledLegWidth} height={scaledLegHeight} fill={skinColor} rx="8"/>
+                <rect x="{centerX + scaledShoulderWidth * 0.22 - scaledLegWidth + 2}" y={hipY_shifted} width={scaledLegWidth} height={scaledLegHeight} fill={skinColor} rx="8"/>
 
                 <!-- SHORTS -->
-                <rect x="{100 - scaledShoulderWidth * 0.25 - 6.5}" y={shortsStartY_shifted} width={scaledLegWidth + 16} height={shortsHeight} fill={shortsColor} rx="6"/>
-                <rect x="{100 + scaledShoulderWidth * 0.25 - scaledLegWidth - 9.5}" y={shortsStartY_shifted} width={scaledLegWidth + 16} height={shortsHeight} fill={shortsColor} rx="6"/>
+                <rect x="{centerX - scaledShoulderWidth * 0.25 - 6.5}" y={shortsStartY_shifted} width={scaledLegWidth + 16} height={shortsHeight} fill={shortsColor} rx="6"/>
+                <rect x="{centerX + scaledShoulderWidth * 0.25 - scaledLegWidth - 9.5}" y={shortsStartY_shifted} width={scaledLegWidth + 16} height={shortsHeight} fill={shortsColor} rx="6"/>
 
                 <!-- JERSEY/TORSO -->
-                <rect x="{100 - scaledShoulderWidth * 0.42}" y={shoulderY_shifted} width={scaledShoulderWidth * 0.84} height={jerseyEndY_shifted - shoulderY_shifted} fill={player.team.primaryColor} rx="8"/>
+                <rect x="{centerX - scaledShoulderWidth * 0.42}" y={shoulderY_shifted} width={scaledShoulderWidth * 0.84} height={jerseyEndY_shifted - shoulderY_shifted} fill={player.team.primaryColor} rx="8"/>
 
                 <!-- ARMS -->
-                <rect x="{100 - scaledShoulderWidth * 0.42 - scaledArmWidth - scaledArmOffsetFromTorso}" y={shoulderY_shifted + 8}
+                <rect x="{centerX - scaledShoulderWidth * 0.42 - scaledArmWidth - scaledArmOffsetFromTorso}" y={shoulderY_shifted + 8}
                       width={scaledArmWidth} height={scaledArmLength} fill={skinColor} rx="8"/>
-                <rect x="{100 + scaledShoulderWidth * 0.42 + scaledArmOffsetFromTorso}" y={shoulderY_shifted + 8}
+                <rect x="{centerX + scaledShoulderWidth * 0.42 + scaledArmOffsetFromTorso}" y={shoulderY_shifted + 8}
                       width={scaledArmWidth} height={scaledArmLength} fill={skinColor} rx="8"/>
 
                 <!-- HANDS -->
-                <circle cx="{100 - scaledShoulderWidth * 0.42 - scaledArmWidth/2 - scaledArmOffsetFromTorso}"
+                <circle cx="{centerX - scaledShoulderWidth * 0.42 - scaledArmWidth/2 - scaledArmOffsetFromTorso}"
                         cy={shoulderY_shifted + 12 + scaledArmLength + scaledHeadSize * 0.08}
                         r="{handSize}" fill={skinColor}/>
-                <circle cx="{100 + scaledShoulderWidth * 0.42 + scaledArmWidth/2 + scaledArmOffsetFromTorso}"
+                <circle cx="{centerX + scaledShoulderWidth * 0.42 + scaledArmWidth/2 + scaledArmOffsetFromTorso}"
                         cy={shoulderY_shifted + 12 + scaledArmLength + scaledHeadSize * 0.08}
                         r="{handSize}" fill={skinColor}/>
 
                 <!-- NECK (emerges from jersey, doesn't connect to head) -->
-                <rect x="{100 - scaledHeadSize * 0.14}" y={shoulderY_shifted - scaledHeadSize * 0.1} width="{scaledHeadSize * 0.28}"
-                      height="{scaledHeadSize * 0.2}" fill={skinColor} rx="{scaledHeadSize * 0.14}"/>
+                <rect x="{centerX - scaledHeadSize * 0.14}" y={shoulderY_shifted - scaledHeadSize * 0.1} width="{scaledHeadSize * 0.28}"
+                      height="{scaledNeckHeight}" fill={skinColor} rx="{scaledHeadSize * 0.14}"/>
 
                 <!-- HEAD (floating above neck) -->
-                <circle cx="100" cy={headY_shifted + scaledHeadSize * 0.45} r={scaledHeadSize * 0.45} fill={skinColor}/>
+                <circle cx="{centerX}" cy={headY_shifted + scaledHeadSize * 0.45} r={scaledHeadSize * 0.45} fill={skinColor}/>
 
                 <!-- EYES (black) -->
-                <circle cx="{100 - scaledHeadSize * 0.15}" cy="{headY_shifted + scaledHeadSize * 0.35}" r="{scaledHeadSize * 0.05}" fill="#111"/>
-                <circle cx="{100 + scaledHeadSize * 0.15}" cy="{headY_shifted + scaledHeadSize * 0.35}" r="{scaledHeadSize * 0.05}" fill="#111"/>
+                <circle cx="{centerX - scaledHeadSize * 0.15}" cy="{headY_shifted + scaledHeadSize * 0.35}" r="{scaledHeadSize * 0.05}" fill="#111"/>
+                <circle cx="{centerX + scaledHeadSize * 0.15}" cy="{headY_shifted + scaledHeadSize * 0.35}" r="{scaledHeadSize * 0.05}" fill="#111"/>
 
                 <!-- JERSEY NUMBER (centered on torso) -->
                 {#if player.jerseyNumber}
                 <text
-                    x="100"
+                    x="{centerX}"
                     y="{shoulderY_shifted + (jerseyEndY_shifted - shoulderY_shifted) / 2 + scaledHeadSize * 0.18}"
                     text-anchor="middle"
                     alignment-baseline="middle"

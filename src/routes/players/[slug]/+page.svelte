@@ -262,27 +262,132 @@
                     
                     <!-- Player sketch container with weight scale at bottom -->
                     <div class="relative flex items-end h-full" style="height: {visualizationHeight}px;">
-                        <!-- Weight scale platform at the bottom -->
-                        <div class="absolute bottom-0 left-9 z-20">
-                            <!-- Main scale platform -->
-                            <div class="bg-gray-400 h-2 w-32 rounded-sm shadow-lg"></div>
-                            <!-- Center display section -->
-                            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full">
-                                <div class="bg-gray-400 w-19 h-7 rounded-t flex items-center justify-center">
-                                    <div class="digital-display w-17 h-5 flex items-center justify-center">
-                                        <span class="text-xs font-bold">{`${player.weight} lbs` || '---'}</span>
+                        {#if player}
+                            <!-- Weight scale platform at the bottom - centered under player -->
+                            <!-- Calculate dynamic player sketch dimensions to match PlayerSketch component -->
+                            {@const wingspanDiff = totalWingspanInches - totalHeightInches}
+                            {@const weightHeightRatio = player ? player.weight / totalHeightInches : 2.8}
+                            {@const wingspanRatio = totalWingspanInches / totalHeightInches}
+                            {@const wingspanAdjustment = Math.max(0.92, Math.min(1.08, 2.05 - wingspanRatio))}
+                            {@const athleteBuildIndex = (weightHeightRatio * wingspanAdjustment) / 2.8}
+                            {@const buildScale = Math.max(0.85, Math.min(1.4, athleteBuildIndex))}
+                            {@const baseSvgWidth = 175}
+                            {@const svgWidthAdjustment = buildScale * 0.3 + (wingspanDiff / 12) * 0.15}
+                            {@const dynamicSvgWidth = Math.max(150, Math.min(200, baseSvgWidth + (svgWidthAdjustment * 40)))}
+                            {@const dynamicCenterX = dynamicSvgWidth / 2}
+                            
+                            <div class="absolute bottom-0 z-20" style="left: {0 + dynamicCenterX}px; transform: translateX(-50%);">
+                                <!-- Main scale platform -->
+                                <div class="bg-gray-400 h-2 w-32 rounded-sm shadow-lg"></div>
+                                <!-- Center display section -->
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full">
+                                    <div class="bg-gray-400 w-19 h-7 rounded-t flex items-center justify-center">
+                                        <div class="digital-display w-17 h-5 flex items-center justify-center">
+                                            <span class="text-xs font-bold">{`${player.weight} lbs` || '---'}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        {/if}
+                        <!-- Player sketch -->
+                        <div style="position: absolute; left: 0px;">
+                            <PlayerSketch 
+                                {player} 
+                                containerHeight={visualizationHeight}
+                            />
                         </div>
                         
-                        <!-- Player sketch -->
-                        <PlayerSketch 
-                            {player} 
-                            containerHeight={visualizationHeight}
-                        />
+                        <!-- Wingspan measurement bracket - UPDATED FOR DYNAMIC SVG -->
+                        {#if player && playerHeightPosition !== null}
+                            <!-- Match PlayerSketch calculations exactly -->
+                            {@const playerPixelHeight = (totalHeightInches / 96) * visualizationHeight}
+                            {@const scaledHeadSize = playerPixelHeight * 0.11}
+                            {@const neckHeight = scaledHeadSize * 0.25}
+                            {@const torsoHeight = playerPixelHeight * 0.45}
+                            {@const legHeight = playerPixelHeight * 0.44}
+                            
+                            <!-- Apply same scaling as PlayerSketch -->
+                            {@const totalVerticalCheck = scaledHeadSize * 0.9 + neckHeight + torsoHeight + legHeight}
+                            {@const scalingFactor = playerPixelHeight / totalVerticalCheck}
+                            {@const scaledHeadSizeFinal = scaledHeadSize * scalingFactor}
+                            {@const scaledTorsoHeight = torsoHeight * scalingFactor}
+                            {@const scaledLegHeight = legHeight * scalingFactor}
+                            
+                            <!-- Dynamic SVG width calculations (same as PlayerSketch) -->
+                            {@const wingspanDiff = totalWingspanInches - totalHeightInches}
+                            {@const weightHeightRatio = player ? player.weight / totalHeightInches : 2.8}
+                            {@const wingspanRatio = totalWingspanInches / totalHeightInches}
+                            {@const wingspanAdjustment = Math.max(0.92, Math.min(1.08, 2.05 - wingspanRatio))}
+                            {@const athleteBuildIndex = (weightHeightRatio * wingspanAdjustment) / 2.8}
+                            {@const buildScale = Math.max(0.85, Math.min(1.4, athleteBuildIndex))}
+                            {@const weightAdj = player ? Math.min(1.15, Math.max(0.85, 1 + (player.weight - 220) / 220 * 0.12)) : 1}
+                            
+                            {@const baseSvgWidth = 175}
+                            {@const svgWidthAdjustment = buildScale * 0.3 + (wingspanDiff / 12) * 0.15}
+                            {@const dynamicSvgWidth = Math.max(150, Math.min(200, baseSvgWidth + (svgWidthAdjustment * 40)))}
+                            {@const dynamicCenterX = dynamicSvgWidth / 2}
+                            
+                            <!-- PlayerSketch arm calculations -->
+                            {@const scaledShoulderWidth = scaledHeadSizeFinal * 2.2 * buildScale}
+                            {@const scaledArmOffsetFromTorso = scaledHeadSizeFinal * 0.12}
+                            {@const scaledArmWidth = Math.max(8, scaledHeadSizeFinal * 0.22 * buildScale * weightAdj)}
+                            
+                            {@const shoulderWidthInches = (scaledShoulderWidth / playerPixelHeight) * totalHeightInches}
+                            {@const armLengthInches = Math.max(22, (totalWingspanInches - shoulderWidthInches) / 2)}
+                            {@const scaledArmLength = (armLengthInches / totalHeightInches) * playerPixelHeight}
+                            
+                            <!-- Position calculations -->
+                            {@const feetY = playerPixelHeight}
+                            {@const hipY = feetY - scaledLegHeight}
+                            {@const shoulderY = hipY - scaledTorsoHeight}
+                            {@const modelBottom = feetY}
+                            {@const verticalOffset = visualizationHeight - modelBottom}
+                            {@const shoulderY_shifted = shoulderY + verticalOffset}
+                            
+                            {@const rightArmX = dynamicCenterX + scaledShoulderWidth * 0.42 + scaledArmOffsetFromTorso + scaledArmWidth/2}
+                            {@const heightMarkersWidth = 20}
+                            {@const absoluteRightArmX = heightMarkersWidth + rightArmX}
+                            
+                            <!-- Calculate hand position to match PlayerSketch exactly -->
+                            {@const handSizeBase = scaledHeadSizeFinal * 0.11 * Math.sqrt(buildScale)}
+                            {@const handSize = handSizeBase * (1 + Math.max(0, wingspanDiff) / 12 * 0.22)}
+                            {@const handCenterX = dynamicCenterX + scaledShoulderWidth * 0.42 + scaledArmWidth/2 + scaledArmOffsetFromTorso}
+                            {@const handTipX = handCenterX + handSize}
+                            {@const absoluteHandTipX = heightMarkersWidth + handTipX}
+                            
+                            <!-- Calculate the total length from shoulder to bottom of hand -->
+                            {@const handOffset = scaledHeadSizeFinal * 0.08}
+                            {@const totalWingspanLength = scaledArmLength + 4 + handOffset + handSize}
+                            
+                            <!-- Wingspan measurement bracket -->
+                            <div class="absolute z-40" style="
+                                top: {shoulderY_shifted + 8}px;
+                                left: {absoluteHandTipX + 15}px;
+                                height: {totalWingspanLength}px;
+                            ">
+                                <!-- Top horizontal bracket end -->
+                                <div class="absolute top-0 left-0 transform -translate-x-1/2">
+                                    <div class="w-3 h-0.5 bg-[#ff3131]"></div>
+                                </div>
+                                
+                                <!-- Main vertical line -->
+                                <div class="absolute left-0 top-0 w-0.5 bg-[#ff3131]" style="height: {totalWingspanLength}px; transform: translateX(-50%);"></div>
+                                
+                                <!-- Bottom horizontal bracket end -->
+                                <div class="absolute left-0 transform -translate-x-1/2" style="top: {totalWingspanLength}px;">
+                                    <div class="w-3 h-0.5 bg-[#ff3131]"></div>
+                                </div>
+                                
+                                <!-- Wingspan measurement label -->
+                                <div class="absolute left-2 transform -translate-y-1/2" style="top: {totalWingspanLength/2}px;">
+                                    <div class="text-[#ff3131] font-bold text-sm whitespace-nowrap">
+                                        <span>{player.wingspan}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
                     </div>
-                    
+
                     <!-- Height indicator line - moved here to appear on top -->
                     {#if playerHeightPosition !== null}
                         <div class="absolute left-0 w-70 h-1 bg-[#ff3131] z-30" style="top: {playerHeightPosition - visualizationHeight/384}px;"></div>

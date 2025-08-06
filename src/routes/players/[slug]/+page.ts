@@ -127,7 +127,7 @@ export const load = ({ params }: { params: { slug: string } }) => {
 			slug: "victor-wembanyama",
 			height: "7'4\"",
 			weight: 230,
-			wingspan: "7'9\"",
+			wingspan: "8'0\"",
 			skinColor: 'dark' as const,
 			jerseyNumber: 1,
 			position: "C",
